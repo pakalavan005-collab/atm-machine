@@ -1,63 +1,95 @@
-balance = 5000
-pin = 1234
+import streamlit as st
 
-def bal():
-    print("Balance amount:", balance)
+# Initialize session state
+if "balance" not in st.session_state:
+    st.session_state.balance = 5000
 
-def deposit():
-    global balance
-    a = int(input("Enter deposit amount: "))
-    balance += a
-    print("New balance:", balance)
+if "pin" not in st.session_state:
+    st.session_state.pin = 1234
 
-def withdraw():
-    global balance
-    b = int(input("Enter withdraw amount: "))
-    if balance < b:
-        print("Insufficient amount")
-    else:
-        balance -= b
-        print("New balance:", balance)
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
-def change_pin():
-    global pin
-    old_pin = int(input("Enter current PIN: "))
-    if old_pin == pin:
-        new_pin = int(input("Enter new PIN: "))
-        confirm_pin = int(input("Confirm new PIN: "))
-        if new_pin == confirm_pin:
-            pin = new_pin
-            print("PIN changed successfully.")
+st.title("🏧 ATM Management System")
+
+# Login
+if not st.session_state.logged_in:
+    user_pin = st.text_input("Enter PIN", type="password")
+
+    if st.button("Login"):
+        if user_pin.isdigit() and int(user_pin) == st.session_state.pin:
+            st.session_state.logged_in = True
+            st.success("Login Successful!")
+            st.rerun()
         else:
-            print("PIN confirmation does not match.")
-    else:
-        print("Incorrect current PIN.")
+            st.error("Invalid PIN")
 
-user_pin = int(input("Enter your PIN: "))
-
-if user_pin == pin:
-    while True:
-        print("\nATM Menu")
-        print("1. Balance")
-        print("2. Deposit")
-        print("3. Withdraw")
-        print("4. Change PIN")
-        print("5. Exit")
-
-        c = int(input("Enter your choice: "))
-
-        if c == 1:
-            bal()
-        elif c == 2:
-            deposit()
-        elif c == 3:
-            withdraw()
-        elif c == 4:
-            change_pin()
-        elif c == 5:
-            print("Thank you for using the ATM.")
-            break
-        else:
-            print("Invalid option.")
+# ATM Menu
 else:
-    print("Invalid PIN")
+    st.sidebar.title("ATM Menu")
+
+    option = st.sidebar.radio(
+        "Select an Option",
+        ["Balance", "Deposit", "Withdraw", "Change PIN", "Logout"]
+    )
+
+    if option == "Balance":
+        st.subheader("Account Balance")
+        st.success(f"Balance Amount: ₹{st.session_state.balance}")
+
+    elif option == "Deposit":
+        st.subheader("Deposit Money")
+        amount = st.number_input(
+            "Enter Deposit Amount",
+            min_value=1,
+            step=1
+        )
+
+        if st.button("Deposit"):
+            st.session_state.balance += amount
+            st.success(f"₹{amount} deposited successfully!")
+            st.info(f"New Balance: ₹{st.session_state.balance}")
+
+    elif option == "Withdraw":
+        st.subheader("Withdraw Money")
+        amount = st.number_input(
+            "Enter Withdraw Amount",
+            min_value=1,
+            step=1
+        )
+
+        if st.button("Withdraw"):
+            if amount > st.session_state.balance:
+                st.error("Insufficient Balance")
+            else:
+                st.session_state.balance -= amount
+                st.success(f"₹{amount} withdrawn successfully!")
+                st.info(f"Remaining Balance: ₹{st.session_state.balance}")
+
+    elif option == "Change PIN":
+        st.subheader("Change PIN")
+
+        old_pin = st.text_input("Current PIN", type="password")
+        new_pin = st.text_input("New PIN", type="password")
+        confirm_pin = st.text_input("Confirm New PIN", type="password")
+
+        if st.button("Update PIN"):
+            if (
+                old_pin.isdigit()
+                and int(old_pin) == st.session_state.pin
+            ):
+                if new_pin == confirm_pin:
+                    if new_pin.isdigit():
+                        st.session_state.pin = int(new_pin)
+                        st.success("PIN Changed Successfully!")
+                    else:
+                        st.error("PIN should contain only numbers.")
+                else:
+                    st.error("New PIN and Confirm PIN do not match.")
+            else:
+                st.error("Current PIN is incorrect.")
+
+    elif option == "Logout":
+        st.session_state.logged_in = False
+        st.success("Logged Out Successfully!")
+        st.rerun()
